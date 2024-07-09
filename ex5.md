@@ -17,37 +17,66 @@
 *敵がプレイヤーに群がるように移動
 *討伐数に応じて徐々に敵を増やしていく
 *プレイヤーにHPをつける
-
+import math
 import os
 import sys
+import time
 import pygame as pg
 import random
 
 
 WIDTH, HEIGHT = 1000, 700
-DELTA = {  # 移動量辞書
-    pg.K_UP: (0, -5),
-    pg.K_DOWN: (0, +5),
-    pg.K_LEFT: (-5, 0),
-    pg.K_RIGHT: (+5, 0),
-}
-
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
+def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
-    引数：こうかとんRect，または，爆弾Rect
-    戻り値：真理値タプル（横方向，縦方向）
-    画面内ならTrue／画面外ならFalse
+    オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
+    引数：こうかとんや爆弾，ビームなどのRect
+    戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
     yoko, tate = True, True
-    if rct.left < 0 or WIDTH < rct.right:  # 横方向判定
+    if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    if rct.top < 0 or HEIGHT < rct.bottom:  # 縦方向判定
+    if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
         tate = False
     return yoko, tate
 
-# def muki():
+def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
+    """
+    orgから見て，dstがどこにあるかを計算し，方向ベクトルをタプルで返す
+    引数1 org：爆弾SurfaceのRect
+    引数2 dst：こうかとんSurfaceのRect
+    戻り値：orgから見たdstの方向ベクトルを表すタプル
+    """
+    x_diff, y_diff = dst.centerx-org.centerx, dst.centery-org.centery
+    norm = math.sqrt(x_diff**2+y_diff**2)
+    return x_diff/norm, y_diff/norm
+
+    def __init__(self, num: int, xy: tuple[int, int]):
+        """
+        こうかとん画像Surfaceを生成する
+        引数1 num：こうかとん画像ファイル名の番号
+        引数2 xy：こうかとん画像の位置座標タプル
+        """
+        super().__init__()
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
+        img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
+        self.imgs = {
+            (+1, 0): img,  # 右
+            (+1, -1): pg.transform.rotozoom(img, 45, 1.0),  # 右上
+            (0, -1): pg.transform.rotozoom(img, 90, 1.0),  # 上
+            (-1, -1): pg.transform.rotozoom(img0, -45, 1.0),  # 左上
+            (-1, 0): img0,  # 左
+            (-1, +1): pg.transform.rotozoom(img0, 45, 1.0),  # 左下
+            (0, +1): pg.transform.rotozoom(img, -90, 1.0),  # 下
+            (+1, +1): pg.transform.rotozoom(img, -45, 1.0),  # 右下
+        }
+        self.dire = (+1, 0)
+        self.image = self.imgs[self.dire]
+        self.rect = self.image.get_rect()
+        self.rect.center = xy
+        self.speed = 10
+
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
