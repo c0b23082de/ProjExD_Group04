@@ -318,7 +318,7 @@ class Item(pg.sprite.Sprite):
     """
     def __init__(self):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/item.png"), 0, 0.5)
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/item.png"), 0, 0.05)
         self.rect = self.image.get_rect()
         self.rect.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
         
@@ -362,14 +362,13 @@ def main():
             framer -= 1
         if framer <= 0:
             framer = 1
-        print(framer)
         if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy(bird))
 
         if tmr%30 == 0:  # 300フレームに1回，敵機を出現させる
             beams.add(Beam(bird))
 
-        if tmr % 500 == 0:  # 一定フレームごとにアイテムを出現させる
+        if tmr % 1000 == 0:  # 一定フレームごとにアイテムを出現させる
             items.add(Item())
     
 
