@@ -252,17 +252,6 @@ class Gravity(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
-# class newbeam(pg.sprite.Sprite):
-#     def __init__(self, bird: Bird, num: int):
-#         self.bird = bird
-#         self.num = num
-#     def gen_beams(self):
-#         """
-#         引数 num：ビームの本数
-#         """
-#         return [Beam(self.bird, angle) for angle in range(-50, 51, int(100/(self.num-1)))]
-#aaaa
-
 class Enemy(pg.sprite.Sprite):
     """
     敵機に関するクラス
@@ -418,7 +407,7 @@ def main():
         a = score.value
         
         
-        if a>=30 and boss_num==0:
+        if a>=400 and boss_num==0:
             boss.add(Boss(bird))
             boss_num = 1
         
@@ -437,7 +426,7 @@ def main():
     
         # スコアが50を超えた場合にビームを追加
         if score.value >= 50:
-            if tmr % 50 == 0:
+            if tmr % 45 == 0:
                 beams.add(Beam(bird, -45))  # 左上方向にビームを追加
                 beams.add(Beam(bird, 45))   # 右下方向にビームを追加
     
@@ -445,22 +434,13 @@ def main():
         if score.value >= 300 and not shield_added:
             shields.add(Shield(bird))
             shield_added = True
-
-
-    
-
-        # for emy in emys:
-        #     if emy.state == "stop" and tmr%emy.interval == 0:
-        #         # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-        #         bombs.add(Bomb(emy, bird))
-        
+  
         for emy in pg.sprite.groupcollide(emys, beams, False, True).keys():
             emy.life -= 1
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-    
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
