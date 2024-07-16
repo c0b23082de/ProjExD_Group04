@@ -251,15 +251,6 @@ class Gravity(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
-# class newbeam(pg.sprite.Sprite):
-#     def __init__(self, bird: Bird, num: int):
-#         self.bird = bird
-#         self.num = num
-#     def gen_beams(self):
-#         """
-#         引数 num：ビームの本数
-#         """
-#         return [Beam(self.bird, angle) for angle in range(-50, 51, int(100/(self.num-1)))]
 
 class Enemy(pg.sprite.Sprite):
     """
@@ -366,7 +357,7 @@ def main():
                     score.value -= 200
   
         screen.blit(bg_img, [0, 0])
-
+    
     
         a = score.value
         if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
@@ -392,8 +383,6 @@ def main():
         if score.value >= 300 and not shield_added:
             shields.add(Shield(bird))
             shield_added = True
-        
-
 
         # for emy in emys:
         #     if emy.state == "stop" and tmr%emy.interval == 0:
@@ -425,10 +414,15 @@ def main():
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
             pg.display.update()
-            time.sleep(2)
+            bird.change_img(8, screen)
+            pg.display.update()
+            time.sleep(1)
+            fonto = pg.font.Font(None, 80)
+            txt = fonto.render("Game Over", True, (255, 0, 0))
+            screen.blit(txt, [WIDTH/2-150, HEIGHT/2])
+            pg.display.update()
+            time.sleep(5)
             return
-        
-
 
         grav.update()
         grav.draw(screen)
