@@ -310,6 +310,30 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+class Shield(pg.sprite.Sprite):
+    """
+    キャラクターの周りを周回して敵を倒すクラス
+    """
+    def __init__(self, bird: Bird):
+        super().__init__()
+        original_image = pg.image.load(f"fig/orbit.png")
+        self.image = pg.transform.scale(original_image, (original_image.get_width() // 2,
+        original_image.get_height() // 2))#画像サイズを半分にする
+        self.rect = self.image.get_rect()
+        self.bird = bird
+        self.angle = 0  # 旋回角度の初期値
+        self.radius = 100  # キャラクターからの距離
+
+    def update(self):
+        """
+        キャラクターの周りを周回するように位置を更新する
+        """
+        self.angle += 3  # 角度を増加させて旋回させる
+        rad_angle = math.radians(self.angle)
+        self.rect.centerx = self.bird.rect.centerx + self.radius * math.cos(rad_angle)
+        self.rect.centery = self.bird.rect.centery + self.radius * math.sin(rad_angle)
+
+
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
@@ -323,6 +347,8 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
     grav = pg.sprite.Group()
+    shields = pg.sprite.Group()
+    shield_added = False
     k_max_hp = 5
     k_hp = k_max_hp
     tmr = 0
@@ -349,12 +375,25 @@ def main():
         if framer <= 0:
             framer = 1
         print(framer)
+
         if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy(bird))
 
-        if tmr%30 == 0:  # 300フレームに1回，敵機を出現させる
+        if tmr%30 == 0:  # 300フレームに1回，ビームを出現させる
             beams.add(Beam(bird))
     
+        # スコアが50を超えた場合にビームを追加
+        if score.value >= 50:
+            if tmr % 50 == 0:
+                beams.add(Beam(bird, -45))  # 左上方向にビームを追加
+                beams.add(Beam(bird, 45))   # 右下方向にビームを追加
+    
+        # スコアが300を超えた場合にシールドを追加
+        if score.value >= 300 and not shield_added:
+            shields.add(Shield(bird))
+            shield_added = True
+        
+
 
         # for emy in emys:
         #     if emy.state == "stop" and tmr%emy.interval == 0:
@@ -376,6 +415,9 @@ def main():
         for emy in pg.sprite.groupcollide(emys, grav, True, False).keys():
             exps.add(Explosion(emy,100))
 
+        for emy in pg.sprite.groupcollide(emys, shields, True, False).keys():
+            exps.add(Explosion(emy, 100))  # シールドに当たった敵機は倒される
+
         draw_hp_bar(screen,bird.rect.centerx - 75,bird.rect.centery - 65,k_hp,k_max_hp)
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
             k_hp -= 1
@@ -385,6 +427,8 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+
 
         grav.update()
         grav.draw(screen)
@@ -398,6 +442,8 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        shields.update()
+        shields.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
