@@ -422,7 +422,7 @@ def main():
         if pg.sprite.groupcollide(boss, beams, False, True):
             boss_hp -= 1
         if boss_hp == 0:
-            bird.change_img(6, screen)
+            bird.change_img(6, screen)# こうかとん喜びエフェクト
             score.update(screen)
             pg.display.update()
             time.sleep(2)
