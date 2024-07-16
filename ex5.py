@@ -313,8 +313,6 @@ class Boss(pg.sprite.Sprite):
         ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
         引数 screen：画面Surface
         """
-        if self.life == 0:
-            self.kill()
         self.vx, self.vy = calc_orientation(self.rect, bird.rect) 
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
     
@@ -440,6 +438,7 @@ def main():
         if score.value >= 300 and not shield_added:
             shields.add(Shield(bird))
             shield_added = True
+
 
     
 
