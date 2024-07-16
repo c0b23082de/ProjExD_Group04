@@ -415,6 +415,12 @@ def main():
 
     
         a = score.value
+        
+        
+        if a>=30 and boss_num==0:
+            boss.add(Boss(bird))
+            boss_num = 1
+        
         if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
             flag+=1       # 値が減るごとに来る敵の数が増えていく
             framer -= 1
