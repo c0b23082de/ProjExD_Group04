@@ -136,7 +136,7 @@ class Bomb(pg.sprite.Sprite):
     """
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 
-    def __init__(self, emy: "Enemy", bird: Bird):
+    def __init__(self, emy: "Boss", bird: Bird):
         """
         爆弾円Surfaceを生成する
         引数1 emy：爆弾を投下する敵機
@@ -213,7 +213,7 @@ class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
     """
-    def __init__(self, obj: "Bomb|Enemy", life: int):
+    def __init__(self, obj: "Bomb|Enemy|Boss", life: int):
         """
         爆弾が爆発するエフェクトを生成する
         引数1 obj：爆発するBombまたは敵機インスタンス
@@ -290,6 +290,28 @@ class Enemy(pg.sprite.Sprite):
         """
         self.vx, self.vy = calc_orientation(self.rect, bird.rect) 
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+
+class Boss(pg.sprite.Sprite):
+    def __init__(self, bird:Bird):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 2.0)
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH, HEIGHT/2)
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect)  
+        self.speed = 2
+        self.rect.centerx = self.rect.centerx
+        self.rect.centery = self.rect.centery+self.rect.height//2
+
+    def update(self, bird:Bird):
+        """
+        敵機を速度ベクトルself.vyに基づき移動（降下）させる
+        ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
+        引数 screen：画面Surface
+        """
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect) 
+        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+    
+        
     
 
 class Score:
@@ -322,6 +344,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    boss = pg.sprite.Group()
     grav = pg.sprite.Group()
     k_max_hp = 5
     k_hp = k_max_hp
@@ -329,6 +352,10 @@ def main():
     clock = pg.time.Clock()
     flag = 1.0
     framer = 20
+    boss_num = 0
+    boss_hp = 10
+
+
     
     while True:
         key_lst = pg.key.get_pressed()
@@ -343,17 +370,23 @@ def main():
 
     
         a = score.value
-        if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
-            flag+=1       # 値が減るごとに来る敵の数が増えていく
-            framer -= 1
-        if framer <= 0:
-            framer = 1
-        print(framer)
-        if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
-            emys.add(Enemy(bird))
+        
+        
+        if a>=50 and boss_num==0:
+            boss.add(Boss(bird))
+            boss_num = 1
+        elif a<50:
+            if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
+                flag+=1       # 値が減るごとに来る敵の数が増えていく
+                framer -= 1
+            if framer <= 0:
+                    framer = 1
+            if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
+                emys.add(Enemy(bird))
 
         if tmr%30 == 0:  # 300フレームに1回，敵機を出現させる
             beams.add(Beam(bird))
+
     
 
         # for emy in emys:
@@ -385,6 +418,15 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+        if pg.sprite.groupcollide(boss, beams, False, True):
+            boss_hp -= 1
+        if boss_hp == 0:
+            bird.change_img(6, screen)
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
 
         grav.update()
         grav.draw(screen)
@@ -393,6 +435,8 @@ def main():
         beams.draw(screen)
         emys.update(bird)
         emys.draw(screen)
+        boss.update(bird)
+        boss.draw(screen)
         bombs.update()
         bombs.draw(screen)
         exps.update()
