@@ -261,6 +261,7 @@ class Gravity(pg.sprite.Sprite):
 #         引数 num：ビームの本数
 #         """
 #         return [Beam(self.bird, angle) for angle in range(-50, 51, int(100/(self.num-1)))]
+#aaaa
 
 class Enemy(pg.sprite.Sprite):
     """
