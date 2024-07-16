@@ -326,6 +326,19 @@ class Shield(pg.sprite.Sprite):
 
 
 
+
+class Item(pg.sprite.Sprite):
+    """
+    回復アイテムに関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/item.png"), 0, 0.05)
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
+        
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -341,6 +354,8 @@ def main():
     shields = pg.sprite.Group()
     shield_added = False
     k_max_hp = 5
+    items = pg.sprite.Group()  # アイテムのグループを追加
+    k_max_hp = 50
     k_hp = k_max_hp
     tmr = 0
     clock = pg.time.Clock()
@@ -372,6 +387,9 @@ def main():
 
         if tmr%30 == 0:  # 300フレームに1回，ビームを出現させる
             beams.add(Beam(bird))
+
+        if tmr % 1000 == 0:  # 一定フレームごとにアイテムを出現させる
+            items.add(Item())
     
         # スコアが50を超えた場合にビームを追加
         if score.value >= 50:
@@ -410,6 +428,8 @@ def main():
         draw_hp_bar(screen,bird.rect.centerx - 75,bird.rect.centery - 65,k_hp,k_max_hp)
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
             k_hp -= 1
+        for item in pg.sprite.spritecollide(bird, items, True):
+            k_hp = min(k_max_hp, k_hp + 10)  # HPを回復する
         if k_hp < 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
@@ -438,6 +458,8 @@ def main():
         score.update(screen)
         shields.update()
         shields.draw(screen)
+        items.update()
+        items.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
