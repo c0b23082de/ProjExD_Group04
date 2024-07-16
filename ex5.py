@@ -375,14 +375,14 @@ def main():
         if a>=30 and boss_num==0:
             boss.add(Boss(bird))
             boss_num = 1
-        elif a<50:
-            if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
-                flag+=1       # 値が減るごとに来る敵の数が増えていく
-                framer -= 1
-            if framer <= 0:
-                    framer = 1
-            if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
-                emys.add(Enemy(bird))
+        
+        if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
+            flag+=1       # 値が減るごとに来る敵の数が増えていく
+            framer -= 1
+        if framer <= 0:
+            framer = 1
+        if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
+            emys.add(Enemy(bird))
 
         if tmr%30 == 0:  # 300フレームに1回，敵機を出現させる
             beams.add(Beam(bird))
