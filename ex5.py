@@ -372,7 +372,7 @@ def main():
         a = score.value
         
         
-        if a>=50 and boss_num==0:
+        if a>=30 and boss_num==0:
             boss.add(Boss(bird))
             boss_num = 1
         elif a<50:
