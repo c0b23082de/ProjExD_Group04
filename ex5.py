@@ -194,6 +194,7 @@ class Beam(pg.sprite.Sprite):
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
             self.kill()
+            pass
     
 
 class NeoBeam:
@@ -275,12 +276,14 @@ class Enemy(pg.sprite.Sprite):
                    (WIDTH, random.randint(0, HEIGHT))]
         super().__init__()
         self.image = random.choice(__class__.imgs)
+        self.life = random.randint(1, 3)
         self.rect = self.image.get_rect()
         self.rect.center = smplace[random.randint(0,3)]
         self.vx, self.vy = calc_orientation(self.rect, bird.rect)  
         self.speed = 2
         self.rect.centerx = self.rect.centerx
         self.rect.centery = self.rect.centery+self.rect.height//2
+        
 
     def update(self, bird:Bird):
         """
@@ -288,6 +291,8 @@ class Enemy(pg.sprite.Sprite):
         ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
         引数 screen：画面Surface
         """
+        if self.life == 0:
+            self.kill()
         self.vx, self.vy = calc_orientation(self.rect, bird.rect) 
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
 
@@ -308,6 +313,8 @@ class Boss(pg.sprite.Sprite):
         ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
         引数 screen：画面Surface
         """
+        if self.life == 0:
+            self.kill()
         self.vx, self.vy = calc_orientation(self.rect, bird.rect) 
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
     
@@ -316,8 +323,7 @@ class Boss(pg.sprite.Sprite):
 
 class Score:
     """
-    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
-    爆弾：1点
+    打ち落とした敵機の数をスコアとして表示するクラス
     敵機：10点
     """
     def __init__(self):
@@ -333,6 +339,43 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class Shield(pg.sprite.Sprite):
+    """
+    キャラクターの周りを周回して敵を倒すクラス
+    """
+    def __init__(self, bird: Bird):
+        super().__init__()
+        original_image = pg.image.load(f"fig/orbit.png")
+        self.image = pg.transform.scale(original_image, (original_image.get_width() // 2,
+        original_image.get_height() // 2))#画像サイズを半分にする
+        self.rect = self.image.get_rect()
+        self.bird = bird
+        self.angle = 0  # 旋回角度の初期値
+        self.radius = 100  # キャラクターからの距離
+
+    def update(self):
+        """
+        キャラクターの周りを周回するように位置を更新する
+        """
+        self.angle += 3  # 角度を増加させて旋回させる
+        rad_angle = math.radians(self.angle)
+        self.rect.centerx = self.bird.rect.centerx + self.radius * math.cos(rad_angle)
+        self.rect.centery = self.bird.rect.centery + self.radius * math.sin(rad_angle)
+
+
+
+class Item(pg.sprite.Sprite):
+    """
+    回復アイテムに関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/item.png"), 0, 0.05)
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
+        
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -346,7 +389,11 @@ def main():
     emys = pg.sprite.Group()
     boss = pg.sprite.Group()
     grav = pg.sprite.Group()
+    shields = pg.sprite.Group()
+    shield_added = False
     k_max_hp = 5
+    items = pg.sprite.Group()  # アイテムのグループを追加
+    k_max_hp = 50
     k_hp = k_max_hp
     tmr = 0
     clock = pg.time.Clock()
@@ -370,22 +417,29 @@ def main():
 
     
         a = score.value
-        
-        
-        if a>=50 and boss_num==0:
-            boss.add(Boss(bird))
-            boss_num = 1
-        elif a<50:
-            if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
-                flag+=1       # 値が減るごとに来る敵の数が増えていく
-                framer -= 1
-            if framer <= 0:
-                    framer = 1
-            if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
-                emys.add(Enemy(bird))
+        if a/100 == flag: # スコアが100の倍数ごとにframerを値を減る
+            flag+=1       # 値が減るごとに来る敵の数が増えていく
+            framer -= 1
+        if framer <= 0:
+            framer = 1
+        if tmr%framer == 0:  # 200フレームに1回，敵機を出現させる
+            emys.add(Enemy(bird))
 
         if tmr%30 == 0:  # 300フレームに1回，敵機を出現させる
             beams.add(Beam(bird))
+        if tmr % 1000 == 0:  # 一定フレームごとにアイテムを出現させる
+            items.add(Item())
+    
+        # スコアが50を超えた場合にビームを追加
+        if score.value >= 50:
+            if tmr % 50 == 0:
+                beams.add(Beam(bird, -45))  # 左上方向にビームを追加
+                beams.add(Beam(bird, 45))   # 右下方向にビームを追加
+    
+        # スコアが300を超えた場合にシールドを追加
+        if score.value >= 300 and not shield_added:
+            shields.add(Shield(bird))
+            shield_added = True
 
     
 
@@ -393,11 +447,14 @@ def main():
         #     if emy.state == "stop" and tmr%emy.interval == 0:
         #         # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
         #         bombs.add(Bomb(emy, bird))
-
-        for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+        
+        for emy in pg.sprite.groupcollide(emys, beams, False, True).keys():
+            emy.life -= 1
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
+
+    
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
@@ -412,6 +469,8 @@ def main():
         draw_hp_bar(screen,bird.rect.centerx - 75,bird.rect.centery - 65,k_hp,k_max_hp)
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
             k_hp -= 1
+        for item in pg.sprite.spritecollide(bird, items, True):
+            k_hp = min(k_max_hp, k_hp + 10)  # HPを回復する
         if k_hp < 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
@@ -442,6 +501,11 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        shields.update()
+        shields.draw(screen)
+
+        items.update()
+        items.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
